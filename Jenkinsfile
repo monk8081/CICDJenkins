@@ -1,59 +1,62 @@
 pipeline {
-    agent { label 'master' }
-   
-	environment {
-		 // Define variables for Docker
-		registry = "mmaurya694/dotnetapp"
-		img = "$registry" + ":${env.BUILD_ID}"
-		registryCredential = 'docker-hub-login' 
-    }	
+    agent any
 
     stages {
+        
+        
         stage('Checkout') {
             steps {
+                // Clone the repository
                 git branch: 'dotnetwebapp', url: 'https://github.com/monk8081/CICDJenkins.git'
                 sh 'ls -la'
             }
         }
+        
+        stage('Build') {
+            steps {
+                // Build the .NET application
+                sh 'dotnet build'
+            }
+        }
 
-
-		stage('Test') {
+        stage('Test') {
             steps {
                 // Run tests for the application
                 sh 'dotnet test'
             }
         }
-		
-		stage('Stop running Container') {
-			steps{
-					sh returnStatus: true, script: 'docker stop $(docker ps -a | grep ${JOB_NAME} | awk \'{print $1}\')'
-					sh returnStatus: true, script: 'docker rmi $(docker images | grep ${registry} | awk \'{print $3}\') --force' 
-					sh returnStatus: true, script: 'docker rm ${JOB_NAME}'
-				}	
-		}
-        stage('Build') {
-            steps {
-				echo "Building our image"
-				script {
-					dockerImg = docker.build("${img}")
-                }
-            }
-        }
-		stage('Run') {
-			steps{
+        
+        stage('building image and Push on Dockerhub'){
+              steps{
+                 script{
+                    echo "=================Build and Push Image on Docker Hub=================="
+                    withCredentials([usernamePassword(credentialsId:'docker_credential', passwordVariable: 'PASS', usernameVariable:'USER')]){
+                       sh 'docker build -t mmaurya694/dotnetapp:14  . '  
+                       sh "echo $PASS | docker login -u  $USER --password-stdin"
+                       sh 'docker push mmaurya694/dotnetapp:14'
+                     }
+                 }
+              }
+         }
+
+
+        stage('Run Docker Container') {
+            steps{
 				echo "Run image"
-				sh returnStdout: true, script: "docker run --rm -d --name ${JOB_NAME} -p 8081:5000 ${img}"
+				sh returnStdout: true, script: "docker run --rm -d  -p 8081:5000 mmaurya694/dotnetapp:14"
 			}
-		}
-		stage('Release') {
-            steps {
-				script {
-					echo "Push to docker hub"
-                    docker.withRegistry( 'https://registry.hub.docker.com ', registryCredential )  {
-							dockerImg.push()
-							dockerImg.push('latest') //one more push for latest tag
-						}
-                }
+            
+        }
+
+        
+    }
+
+    post {
+        always {
+            script {
+                // Cleanup Docker containers
+                sh 'docker stop dotnet_project_with_CICD || true'
+                sh 'docker rm dotnet_project_with_CICD || true'
             }
         }
     }
