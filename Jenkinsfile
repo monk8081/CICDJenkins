@@ -2,7 +2,8 @@ pipeline {
     agent { label 'master' }
    
 	environment {
-		registry = "kss7/dotnetapp"
+		 // Define variables for Docker
+		registry = "mmaurya694/dotnetapp"
 		img = "$registry" + ":${env.BUILD_ID}"
 		registryCredential = 'docker-hub-login' 
     }	
@@ -10,10 +11,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'dotnetwebapp', url: 'https://github.com/kss7/CICDJenkins.git'
+                git branch: 'dotnetwebapp', url: 'https://github.com/monk8081/CICDJenkins.git'
                 sh 'ls -la'
             }
         }
+
+
+		stage('Test') {
+            steps {
+                // Run tests for the application
+                sh 'dotnet test'
+            }
+        }
+		
 		stage('Stop running Container') {
 			steps{
 					sh returnStatus: true, script: 'docker stop $(docker ps -a | grep ${JOB_NAME} | awk \'{print $1}\')'
