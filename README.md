@@ -16,4 +16,4 @@ dotnet run /or dotnet run --urls http://*:5000
 ```
 
 
-Real World CI/CD Udemy Course [Udemy Link](https://www.udemy.com/course/cicd-pipelines-devops-jenkins-python-docker/?referralCode=AC03DFF9ABBABBEAB333).
+
