@@ -4,7 +4,7 @@ pipeline {
     stages {
         
         
-        stage('Checkout') {
+        stage('Checkout the Code') {
             steps {
                 // Clone the repository
                 git branch: 'dotnetwebapp', url: 'https://github.com/monk8081/CICDJenkins.git'
@@ -12,7 +12,7 @@ pipeline {
             }
         }
         
-        stage('Build') {
+        stage('Build The .NET Applicaion ') {
             steps {
                 // Build the .NET application
                 sh 'dotnet build'
@@ -26,24 +26,32 @@ pipeline {
             }
         }
         
-        stage('building image and Push on Dockerhub'){
+        stage('Building Docker  image '){
+              steps{
+                 script{
+                    echo "=================Build The Docker  Image =================="
+                    sh 'docker build -t mmaurya694/dotnetapp:1  . '
+                    
+                }
+            }
+        }
+         
+        stage(' Docker image Push on Dockerhub'){
               steps{
                  script{
                     echo "=================Build and Push Image on Docker Hub=================="
                     withCredentials([usernamePassword(credentialsId:'docker_credential', passwordVariable: 'PASS', usernameVariable:'USER')]){
-                       sh 'docker build -t mmaurya694/dotnetapp:14  . '  
                        sh "echo $PASS | docker login -u  $USER --password-stdin"
-                       sh 'docker push mmaurya694/dotnetapp:14'
-                     }
-                 }
-              }
-         }
-
+                       sh 'docker push mmaurya694/dotnetapp:1'
+                    }
+                }
+            }
+        }
 
         stage('Run Docker Container') {
             steps{
-				echo "Run image"
-				sh returnStdout: true, script: "docker run --rm -d  -p 8081:5000 mmaurya694/dotnetapp:14"
+				echo "===============Running the docker images=================== "
+				sh returnStdout: true, script: "docker run --rm -d  -p 8081:5000 mmaurya694/dotnetapp:1"
 			}
             
         }
